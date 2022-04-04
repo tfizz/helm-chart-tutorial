@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ .Release.Name }}
+  labels:
+    app:  {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app:  {{ .Release.Name }}
+    spec:
+      containers:
+      - image:  {{ .Values.image.repository }}
+        name:  {{ .Values.container.name }}
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}
+              key: {{ .Values.mongo.secretKeyRef.user }}
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}
+              key: {{ .Values.mongo.secretKeyRef.password }}
+        ports:
+        - containerPort:  {{ .Values.service.port }}
+        volumeMounts:
+        - mountPath: /data/db
+          name: {{ .Values.container.name }}
+      volumes:
+        - name: {{ .Values.container.name }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ .Release.Name }}
+spec:
+  selector:
+    app:  {{ .Release.Name }}
+  type:   {{ .Values.service.type }}
+  ports:
+  - protocol:  {{ .Values.service.protocol }}
+    port:  {{ .Values.service.port }}
+    targetPort:  {{ .Values.service.port }}
+    nodePort: {{ .Values.service.nodePort }}
